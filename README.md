@@ -181,7 +181,6 @@ Uso e Acessibilidade:
   - Legenda/Caption: 12–14 px, regular
 - Espaçamento: linha 1.4–1.6; entre seções 16–24px.
 
-
 Consistência:
 - Use preenchidos para ações primárias e contornados para secundárias.
 - Estados: default, hover, active, disabled (opacidade 38–60%).
@@ -196,3 +195,142 @@ Consistência:
 - Rastreamento: mapa com rota e ETA; status chips coloridos.
 - Tabelas simples: extrato do entregador com filtros por período.
 
+---
+
+## 5. Escalabilidade
+
+### 5.1 Estratégias de Escala por Serviço
+- Escala horizontal stateless:
+  - Serviços de API (Pedidos, Entregas, Notificação, Autenticação) empacotados em contêineres e orquestrados (Kubernetes/ECS) com auto-scaling baseado em CPU, memória e latência p95/p99.
+  - Sessões stateless; dados de sessão e rate limits em Redis/KeyDB.
+- Escala orientada a filas:
+  - Picos de criação de pedidos, cálculo de ETA e envio de notificações amortecidos via RabbitMQ (work queues).
+  - Consumidores com auto-scaling por profundidade da fila e tempo em fila.
+- Escala de leitura:
+  - Cache por recurso “quente” (cardápio, promoções e configurações de unidade) em Redis com invalidação por evento.
+  - Read replicas nos bancos transacionais para relatórios operacionais e consultas de alto volume.
+- Geodistribuição:
+  - Regiões múltiplas para reduzir latência de cliente e aumentar resiliência.
+  - Roteamento geográfico no gateway e em DNS (GeoDNS) para direcionar ao POP/cluster mais próximo.
+
+### 5.2 Particionamento e Consistência
+- Sharding lógico por “unidade” (loja) e/ou por região:
+  - Tabelas de pedidos e entregas particionadas por `store_id` e `created_at`.
+  - Serviço de Entregas com partição por célula geográfica (geohash) para matchmaking local.
+- Estratégia de consistência:
+  - Consistência forte para operações críticas (cobrança, antifraude, confirmação de pagamento).
+  - Consistência eventual para catálogos, promoções, tracking em tempo real e contadores.
+  - Idempotência em endpoints de criação de pedido e processamento de webhooks.
+- Sagas e transações distribuídas:
+  - Coreografias com eventos para orquestrar Pedido → Pagamento → Preparo → Entrega.
+  - Compensações definidas para cancelamentos e falhas parciais.
+
+### 5.3 Performance e Custo
+- Tuning de performance:
+  - Circuit breakers, timeouts e retries exponenciais com jitter.
+  - Bulkheads para isolar pools de conexão por serviço/cliente.
+  - N+1 queries: ORMs configurados com `select`/`join fetch` e paginação estrita.
+- Otimização de custo:
+  - Autoscaling com “floor” noturno e “burst” em janelas de pico (almoço/jantar).
+  - Tiering de armazenamento: dados frios para data lake; TTL para logs e métricas.
+  - Orquestração de jobs batch fora de horários de pico.
+
+### 5.4 Resiliência e Alta Disponibilidade
+- Multi-AZ por padrão; Multi-Region ativo-ativo para APIs de leitura e ativo-passivo para escrita sensível.
+- Degradação graciosa:
+  - Queda temporária de recomendações/ratings não bloqueia checkout.
+  - Modo “alta demanda” ajusta ETA e aplica fila virtual.
+- DR e RPO/RTO:
+  - Backups automáticos com testes de restore frequentes.
+  - Objetivos: RPO ≤ 5 min; RTO ≤ 30 min para serviços core.
+
+---
+
+## 6. Observabilidade
+
+### 6.1 Pilares e Ferramentas
+- Métricas (Datadog):
+  - Latência p50/p95/p99 por endpoint e por serviço.
+  - Taxa de erro por tipo (4xx, 5xx), saturação (CPU, memória, fila).
+  - Negócio: pedidos/min, conversão checkout, tempo médio de preparo, SLA de entrega.
+- Logs estruturados (JSON):
+  - Correlação com `trace_id`, `span_id`, `order_id`, `store_id`, `driver_id`.
+  - Política de retenção por criticidade e mascaramento de PII.
+- Tracing distribuído:
+  - OpenTelemetry nas bordas e serviços; amostragem dinâmica (mais alta em falhas).
+  - Spans para chamadas externas (PSPs, geocoding, push).
+- Monitoramento sintético:
+  - Uptime Kuma para health checks e fluxos críticos (checkout, login, webhook).
+  - Testes de ponta-a-ponta periódicos em produção em release canário.
+
+### 6.2 Dashboards e Alertas
+- Dashboards por domínio:
+  - Checkout: taxa de sucesso, latência de pagamento, erros por adquirente.
+  - Entregas: tempo de alocação, tempo em rota, taxa de reatribuição.
+  - Operação de unidade: pedidos em fila, tempo de preparo, indisponibilidades de item.
+- Alertas inteligentes:
+  - Limiares dinâmicos com detecção de anomalias em p95 e erro 5xx.
+  - SLOs e SLIs:
+    - Disponibilidade API core ≥ 99.9%.
+    - Latência p95 de criação de pedido ≤ 600 ms.
+    - Tempo de alocação de entregador p95 ≤ 90 s.
+- Runbooks e SRE:
+  - Playbooks versionados por tipo de incidente (fila crescendo, saturação DB, PSP fora).
+  - Postmortems sem culpa, com ações corretivas rastreáveis.
+
+### 6.3 Boas Práticas Operacionais
+- Feature flags com observabilidade:
+  - Rollout gradual e “kill switch” visível em dashboards.
+- Logging eficiente:
+  - Amostragem de logs de sucesso; logs completos em erros.
+  - PII/PCI redacted por padrão, com campos “safe” para análise.
+- Auditoria:
+  - Trilha de auditoria para ações administrativas e mudanças de catálogo/preço.
+
+---
+
+## 7. Segurança
+
+### 7.1 Autenticação, Autorização e Gestão de Segredos
+- Autenticação:
+  - Spring Security + JWT de curta duração, com refresh tokens rotativos.
+  - Suporte a OAuth 2.0/social login; MFA opcional para administradores e suporte.
+- Autorização:
+  - RBAC por perfil (Cliente, Entregador, Admin de Unidade, Suporte).
+  - Escopos por serviço; autorização contextual por `store_id` e região.
+- Segredos e chaves:
+  - Vault/KMS para segredos, rotação automática e acesso mínimo necessário.
+  - Assinatura de webhooks com verificação de tempo e nonce (replay protection).
+
+### 7.2 Proteção de Dados e Conformidade (LGPD/PCI)
+- Dados em trânsito e em repouso:
+  - TLS 1.2+ em todas as comunicações; HSTS no gateway.
+  - Criptografia em repouso (AES-256) para dados sensíveis; tokenização de PAN (cartão) via PSP.
+- Privacidade e LGPD:
+  - Minimização de coleta; bases legais registradas.
+  - Consentimento granular para notificações e marketing; registro de consentimentos.
+  - Retenção e descarte: políticas por tipo de dado, com anonimização de históricos.
+  - Atendimentos a direitos do titular (acesso, correção, exclusão) com SLA.
+- PCI-DSS:
+  - Terceirização do manuseio de cartão ao PSP; evitar armazenar PAN.
+  - SAQ A-EP/A conforme arquitetura; segmentação de rede e escopo minimizado.
+
+### 7.3 Segurança de Aplicação e Infraestrutura
+- Defesa em profundidade:
+  - WAF no gateway; rate limiting e proteção contra brute force e enumeração.
+  - Validação rigorosa de entrada e serialização segura; cabeçalhos de segurança (CSP, X-Frame-Options).
+- Supply chain e runtime:
+  - SCA/Dependabot e SAST no CI; imagens base mínimas e assinadas (SBOM).
+  - Contêineres rodando como não root; seccomp/AppArmor; políticas NetworkPolicy.
+- Gestão de vulnerabilidades:
+  - Scans periódicos, patching automatizado, varreduras de portas e CIS benchmarks.
+  - Bug bounty interno/externo conforme maturidade.
+
+### 7.4 Continuidade e Resposta a Incidentes
+- Backups cifrados com testes de restauração e exercícios de DR.
+- Plano de resposta:
+  - Detecção → triagem → contenção → erradicação → recuperação → postmortem.
+  - Canais de comunicação preparados (status page, templates).
+- Segregação de ambientes:
+  - Dev/QA/Prod isolados; dados de produção não replicados para dev.
+  - Acesso administrativo com bastion, MFA e auditoria completa.
