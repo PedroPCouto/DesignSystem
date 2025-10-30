@@ -312,3 +312,8 @@ Consistência:
   - Retenção e descarte: políticas por tipo de dado, com anonimização de históricos.
   - Atendimentos a direitos do titular (acesso, correção, exclusão) com SLA.
 
+ ---
+
+ ### 8. Modelagem de Banco de dados
+
+![WhatsApp Image 2025-10-30 at 20 04 35](https://github.com/user-attachments/assets/16a5cd16-99aa-4dbf-b49a-d3588bbc4b9e)
