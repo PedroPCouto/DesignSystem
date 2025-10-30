@@ -302,7 +302,7 @@ Consistência:
   - Vault/KMS para segredos, rotação automática e acesso mínimo necessário.
   - Assinatura de webhooks com verificação de tempo e nonce (replay protection).
 
-### 7.2 Proteção de Dados e Conformidade (LGPD/PCI)
+### 7.2 Proteção de Dados e Conformidade (LGPD)
 - Dados em trânsito e em repouso:
   - TLS 1.2+ em todas as comunicações; HSTS no gateway.
   - Criptografia em repouso (AES-256) para dados sensíveis; tokenização de PAN (cartão) via PSP.
@@ -311,26 +311,4 @@ Consistência:
   - Consentimento granular para notificações e marketing; registro de consentimentos.
   - Retenção e descarte: políticas por tipo de dado, com anonimização de históricos.
   - Atendimentos a direitos do titular (acesso, correção, exclusão) com SLA.
-- PCI-DSS:
-  - Terceirização do manuseio de cartão ao PSP; evitar armazenar PAN.
-  - SAQ A-EP/A conforme arquitetura; segmentação de rede e escopo minimizado.
 
-### 7.3 Segurança de Aplicação e Infraestrutura
-- Defesa em profundidade:
-  - WAF no gateway; rate limiting e proteção contra brute force e enumeração.
-  - Validação rigorosa de entrada e serialização segura; cabeçalhos de segurança (CSP, X-Frame-Options).
-- Supply chain e runtime:
-  - SCA/Dependabot e SAST no CI; imagens base mínimas e assinadas (SBOM).
-  - Contêineres rodando como não root; seccomp/AppArmor; políticas NetworkPolicy.
-- Gestão de vulnerabilidades:
-  - Scans periódicos, patching automatizado, varreduras de portas e CIS benchmarks.
-  - Bug bounty interno/externo conforme maturidade.
-
-### 7.4 Continuidade e Resposta a Incidentes
-- Backups cifrados com testes de restauração e exercícios de DR.
-- Plano de resposta:
-  - Detecção → triagem → contenção → erradicação → recuperação → postmortem.
-  - Canais de comunicação preparados (status page, templates).
-- Segregação de ambientes:
-  - Dev/QA/Prod isolados; dados de produção não replicados para dev.
-  - Acesso administrativo com bastion, MFA e auditoria completa.
