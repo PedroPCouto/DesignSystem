@@ -176,29 +176,57 @@ Para implementar essa funcionalidade, será desenvolvido um **novo microserviço
 - **Qualidade dos Dados**: Dados esparsos ou inconsistentes podem prejudicar a precisão do modelo. *Solução*: Implementar validações e enriquecimento de dados através de múltiplas fontes.
 
 
+# 📱 Frontend - Design System & Especificações
 
-## 🔐 FrontEnd (IMPLEMENTAR AINDA)
-### Padrões de Acessibilidade
-- **Alt Text em Imagens**: Todas as imagens devem conter descrições alternativas.
-### Jornada do Usuário
-- **Médico**: Disponibiliza agenda e realiza atendimentos.
-- **Paciente**: Marca horários e acessa consultas.
-- **Atendente**: Acessa a agenda dos médicos, pode remover horários com autorização
-do paciente, e tem acesso a laudos e exames.
-### Design
-- **Cores**:
-- Rosa: `#FFC0CB`
-- Branco: `#FFFFFF`
-- Cinza Claro: `#D3D3D3`
-- **Tipografia**: Arial, Helvetica, sans-serif.
-- **Ícones**: Utilização de biblioteca de ícones como Material Icons.
-- **Framework CSS**: Bootstrap.
-### Tecnologias Utilizadas
-- **React**: Framework principal para desenvolvimento do frontend.
-- **Tailwind CSS**: Para estilização e design responsivo.
-- **Axios**: Para comunicação com a API.
+## 🎨 Identidade Visual
 
+### Paleta de Cores
 
+#### Cores Primárias
+- **Vermelho Principal**: `#FF441A` (600)
+- **Rosa Vibrante**: `#FF07C2` (600)
+- **Roxo**: `#DC54F3` (900) / `#531CB3` (900)
+- **Azul Claro**: `#EAF2FF` (900)
+- **Cinza Escuro**: `#423E3B` (900)
+
+#### Cores Secundárias
+- **Laranja**: `#FF441A` (900)
+- **Rosa Claro**: `#FFC0CB`
+- **Branco**: `#FFFFFF`
+- **Cinza Claro**: `#D3D3D3` / `#EAF2FF`
+
+#### Acessibilidade de Contraste
+Todas as combinações de cores seguem os padrões WCAG:
+- **AA 4.55**: Contraste mínimo para texto normal
+- **AAA 5**: Contraste ideal para melhor legibilidade
+
+## 🔤 Tipografia
+
+### Fonte Principal: **NOTO SANS - Display Medium**
+
+#### Hierarquia Tipográfica
+
+**Título (Display Medium)**
+- Uso: Títulos de páginas, seções, nomes de produtos, listas pequenas
+- Peso: 600 (Medium)
+- Características: Bold, impactante, alta legibilidade
+
+**Corpo (Regular)**
+- Uso: Artigos, descrições de produtos, perguntas e respostas
+- Peso: 400 (Regular)
+- Características: Leitura confortável para textos longos
+
+**Funcional (Bold)**
+- Uso: Botões, links, formulários, notificações, etiquetas
+- Peso: 900 (Bold)
+- Características: Destaque em elementos interativos
+
+### Fallback Fonts
+```css
+font-family: 'Noto Sans', Arial, Helvetica, sans-serif;
+```
+<img width="1728" height="1117" alt="Fontes - Style Guide" src="https://github.com/user-attachments/assets/703ab383-e0e9-4dc8-b0a3-b7d8cafcc78e" />
+<img width="1728" height="1117" alt="Botões" src="https://github.com/user-attachments/assets/0468c203-a4a7-47bc-b036-cf4bf0533180" />
 
 ## Dados (IMPLEMENTAR AINDA)
 ### Banco de Dados
